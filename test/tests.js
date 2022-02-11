@@ -1,5 +1,5 @@
 //@format
-/*globals QUnit firestoreQueryParser*/
+/*globals QUnit firestoreQueryParser astToPlan*/
 const parser = firestoreQueryParser;
 
 function mkComp(op) {
@@ -121,6 +121,43 @@ QUnit.module('add', () => {
         and(ne(id('b'), bool(true)), lt(id('c'), num(42)))
       ),
       parser.parse('a == false and b != true and c < 42')
+    );
+  });
+
+  QUnit.test('astToPlan boolExpr', (assert) => {
+    assert.deepEqual(
+      ['where', ['a', '==', false]],
+      astToPlan(parser.parse('a == false'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '!=', true]],
+      ],
+      astToPlan(parser.parse('a == false and b != true'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '!=', true]],
+        ['where', ['c', '<', 42]],
+      ],
+      astToPlan(parser.parse('a == false and b != true and c < 42'))
+    );
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '!=', true]],
+        ['where', ['c', '<', 42]],
+        ['where', ['d', 'not-in', [42, true, 'hi']]],
+      ],
+      astToPlan(
+        parser.parse(
+          'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
+        )
+      )
     );
   });
 });
