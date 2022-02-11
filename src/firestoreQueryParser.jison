@@ -10,14 +10,19 @@
 and                   return 'and';
 '"'("\\"["]|[^"])*'"' return 'STRING';
 
+"["                   return '[';
+"]"                   return ']';
+","                   return ',';
+
 "<="                  return '<=';
 "<"                   return '<';
 "=="                  return '==';
 ">="                  return '>=';
 ">"                   return '>';
 "!="                  return '!=';
-"array-contains"      return 'array-contains';
+
 "array-contains-any"  return 'array-contains-any';
+"array-contains"      return 'array-contains';
 "in"                  return 'in';
 "not-in"              return 'not-in';
 
@@ -40,6 +45,7 @@ boolExpr
 
 compExpr
     : name compOp literal {$$ = {type: 'compExpr', left: $1, op: $2, right: $3};}
+    | name arrayOp array  {$$ = {type: 'compExpr', left: $1, op: $2, right: $3};}
     ;
 
 compOp
@@ -49,7 +55,10 @@ compOp
     | '>='                  {$$ = {type: 'compOp', v: yytext};}
     | '>'                   {$$ = {type: 'compOp', v: yytext};}
     | '!='                  {$$ = {type: 'compOp', v: yytext};}
-    | 'array-contains'      {$$ = {type: 'compOp', v: yytext};}
+    ;
+
+arrayOp
+    : 'array-contains'      {$$ = {type: 'compOp', v: yytext};}
     | 'array-contains-any'  {$$ = {type: 'compOp', v: yytext};}
     | 'in'                  {$$ = {type: 'compOp', v: yytext};}
     | 'not-in'              {$$ = {type: 'compOp', v: yytext};}
@@ -57,6 +66,16 @@ compOp
 
 boolOp
     : 'and'                   {$$ = {type: 'boolOp', v: yytext};}
+    ;
+
+array
+    : '[' arrayItems ']'      {$$ = {type: 'array', v: $2};}
+    | '[' ']'                 {$$ = {type: 'array', v: []};}
+    ;
+
+arrayItems
+    : literal ',' arrayItems {$$ = [$1].concat($3);}
+    | literal {$$ = [$1];}
     ;
 
 literal

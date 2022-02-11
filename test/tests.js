@@ -23,12 +23,21 @@ const eq = mkComp('=='),
 
 const and = mkBool('and');
 
+const arrContains = mkComp('array-contains'),
+  arrContainsAny = mkComp('array-contains-any'),
+  arrIn = mkComp('in'),
+  arrNotIn = mkComp('not-in');
+
 function id(v) {
   return t('name', v);
 }
 
 function num(v) {
   return t('num', v);
+}
+
+function array(...v) {
+  return t('array', v);
 }
 
 function str(v) {
@@ -69,6 +78,34 @@ QUnit.module('add', () => {
     assert.deepEqual(
       ge(id('ab_AB_12'), str('asd')),
       parser.parse('ab_AB_12 >= "asd"')
+    );
+  });
+
+  QUnit.test('parse array compExpr', (assert) => {
+    assert.deepEqual(
+      arrContains(id('a'), array()),
+      parser.parse('a array-contains []')
+    );
+    assert.deepEqual(
+      arrContainsAny(id('a'), array()),
+      parser.parse('a array-contains-any []')
+    );
+    assert.deepEqual(arrIn(id('a'), array()), parser.parse('a in []'));
+    assert.deepEqual(arrNotIn(id('a'), array()), parser.parse('a not-in []'));
+
+    assert.deepEqual(
+      arrContains(id('a'), array(num(1))),
+      parser.parse('a array-contains [1]')
+    );
+
+    assert.deepEqual(
+      arrContains(id('a'), array(num(1), bool(true))),
+      parser.parse('a array-contains [1, true]')
+    );
+
+    assert.deepEqual(
+      arrContains(id('a'), array(num(1), bool(true), str('hi'))),
+      parser.parse('a array-contains [1, true, "hi"]')
     );
   });
 
