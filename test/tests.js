@@ -1,6 +1,7 @@
 //@format
-/*globals QUnit firestoreQueryParser astToPlan*/
-const parser = firestoreQueryParser;
+/*globals QUnit firestoreQueryParser*/
+const parser = firestoreQueryParser,
+  astToPlan = firestoreQueryParser.astToPlan;
 
 function mkComp(op) {
   return function (left, right) {
