@@ -94,20 +94,20 @@ function boolExpr(left, op, right) {
 }
 
 class MockQuery {
-  constructor() {
-    this.ops = [];
+  constructor(ops) {
+    this.ops = ops || [];
   }
   where(left, op, right) {
-    this._pushOp('where', [left, op, right]);
+    return this.withOp('where', [left, op, right]);
   }
   limit(num) {
-    this._pushOp('limit', [num]);
+    return this.withOp('limit', [num]);
   }
   sortBy(name, type) {
-    this._pushOp('sortBy', [name, type]);
+    return this.withOp('sortBy', [name, type]);
   }
-  _pushOp(name, args) {
-    this.ops.push([name, args]);
+  withOp(name, args) {
+    return new MockQuery(this.ops.concat([[name, args]]));
   }
 }
 
@@ -480,12 +480,13 @@ QUnit.module('firebaseQueryParser', () => {
   });
 
   QUnit.test('applyToQuery', (assert) => {
-    const q1 = new MockQuery();
-    applyToQuery(q1, parser.parse('a == false'));
+    const q1 = applyToQuery(new MockQuery(), parser.parse('a == false'));
     assert.deepEqual([['where', ['a', '==', false]]], q1.ops);
 
-    const q2 = new MockQuery();
-    applyToQuery(q2, parser.parse('a == false and b != true'));
+    const q2 = applyToQuery(
+      new MockQuery(),
+      parser.parse('a == false and b != true')
+    );
     assert.deepEqual(
       [
         ['where', ['a', '==', false]],
@@ -494,8 +495,10 @@ QUnit.module('firebaseQueryParser', () => {
       q2.ops
     );
 
-    const q3 = new MockQuery();
-    applyToQuery(q3, parser.parse('a == false and b != true and c < 42'));
+    const q3 = applyToQuery(
+      new MockQuery(),
+      parser.parse('a == false and b != true and c < 42')
+    );
     assert.deepEqual(
       [
         ['where', ['a', '==', false]],
@@ -505,9 +508,8 @@ QUnit.module('firebaseQueryParser', () => {
       q3.ops
     );
 
-    const q4 = new MockQuery();
-    applyToQuery(
-      q4,
+    const q4 = applyToQuery(
+      new MockQuery(),
       parser.parse(
         'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
       )
@@ -522,9 +524,8 @@ QUnit.module('firebaseQueryParser', () => {
       q4.ops
     );
 
-    const q5 = new MockQuery();
-    applyToQuery(
-      q5,
+    const q5 = applyToQuery(
+      new MockQuery(),
       parser.parse('a == false and b == 5 ORDER BY a, b DESC, c ASC LIMIT 6')
     );
     assert.deepEqual(

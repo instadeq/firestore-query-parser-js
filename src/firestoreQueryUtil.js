@@ -71,8 +71,9 @@
 
   function applyToQuery(query, ast) {
     for (let [method, params] of astToPlan(ast)) {
-      query[method].apply(query, params);
+      query = query[method].apply(query, params);
     }
+    return query;
   }
 
   firestoreQueryParser.astToSExpr = astToSExpr;
