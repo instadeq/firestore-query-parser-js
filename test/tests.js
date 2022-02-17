@@ -103,8 +103,8 @@ class MockQuery {
   limit(num) {
     return this.withOp('limit', [num]);
   }
-  sortBy(name, type) {
-    return this.withOp('sortBy', [name, type]);
+  orderBy(name, type) {
+    return this.withOp('orderBy', [name, type]);
   }
   withOp(name, args) {
     return new MockQuery(this.ops.concat([[name, args]]));
@@ -440,7 +440,7 @@ QUnit.module('firebaseQueryParser', () => {
     assert.deepEqual(
       [
         ['where', ['a', '==', false]],
-        ['sortBy', ['a', 'asc']],
+        ['orderBy', ['a', 'asc']],
         ['limit', [6]],
       ],
       astToPlan(parser.parse('a == false ORDER BY a LIMIT 6'))
@@ -449,8 +449,8 @@ QUnit.module('firebaseQueryParser', () => {
     assert.deepEqual(
       [
         ['where', ['a', '==', false]],
-        ['sortBy', ['a', 'asc']],
-        ['sortBy', ['b', 'desc']],
+        ['orderBy', ['a', 'asc']],
+        ['orderBy', ['b', 'desc']],
         ['limit', [6]],
       ],
       astToPlan(parser.parse('a == false ORDER BY a, b DESC LIMIT 6'))
@@ -458,9 +458,9 @@ QUnit.module('firebaseQueryParser', () => {
     assert.deepEqual(
       [
         ['where', ['a', '==', false]],
-        ['sortBy', ['a', 'asc']],
-        ['sortBy', ['b', 'desc']],
-        ['sortBy', ['c', 'asc']],
+        ['orderBy', ['a', 'asc']],
+        ['orderBy', ['b', 'desc']],
+        ['orderBy', ['c', 'asc']],
       ],
       astToPlan(parser.parse('a == false ORDER BY a, b DESC, c ASC'))
     );
@@ -468,9 +468,9 @@ QUnit.module('firebaseQueryParser', () => {
       [
         ['where', ['a', '==', false]],
         ['where', ['b', '==', 5]],
-        ['sortBy', ['a', 'asc']],
-        ['sortBy', ['b', 'desc']],
-        ['sortBy', ['c', 'asc']],
+        ['orderBy', ['a', 'asc']],
+        ['orderBy', ['b', 'desc']],
+        ['orderBy', ['c', 'asc']],
         ['limit', [6]],
       ],
       astToPlan(
@@ -532,9 +532,9 @@ QUnit.module('firebaseQueryParser', () => {
       [
         ['where', ['a', '==', false]],
         ['where', ['b', '==', 5]],
-        ['sortBy', ['a', 'asc']],
-        ['sortBy', ['b', 'desc']],
-        ['sortBy', ['c', 'asc']],
+        ['orderBy', ['a', 'asc']],
+        ['orderBy', ['b', 'desc']],
+        ['orderBy', ['c', 'asc']],
         ['limit', [6]],
       ],
       q5.ops

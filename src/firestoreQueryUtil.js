@@ -57,7 +57,7 @@
     for (let expr of rest) {
       if (expr[0] === 'orderBy') {
         for (let order of expr[1]) {
-          plan.push(['sortBy', order]);
+          plan.push(['orderBy', order]);
         }
       } else if (expr[0] === 'limit') {
         plan.push(['limit', [expr[1]]]);
