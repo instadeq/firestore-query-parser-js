@@ -17,6 +17,8 @@ Open `test/index.html` in your browser
 
 ## Use
 
+Try the [Playground](https://instadeq.github.io/firestore-query-parser-js/playground.html)
+
 Check `test/tests.js` for usage examples, but basically:
 
 ```js
