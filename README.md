@@ -26,15 +26,30 @@ const ast = firestoreQueryParser.parse(
 )
 
 // this
-firestoreQueryParser.astToPlan(ast);
-// will return something like this:
+firestoreQueryParser.astToSExpr(ast);
+// will return something like this, useful for debugging:
 [
+  'and',
+  [
     ['where', ['a', '==', false]],
     ['where', ['b', '!=', true]],
     ['where', ['c', '<', 42]],
     ['where', ['d', 'not-in', [42, true, 'hi']]],
-],
-// which you can use to apply to your firestore query object
+  ],
+]
+
+// this
+firestoreQueryParser.astToPlan(ast);
+// will return something like this, useful to apply it to the firestore query:
+[
+  ['where', ['a', '==', false]],
+  ['where', ['b', '!=', true]],
+  ['where', ['c', '<', 42]],
+  ['where', ['d', 'not-in', [42, true, 'hi']]],
+]
+
+// or you can just apply it to your query object:
+firestoreQueryParser.applyToQuery(query, ast);
 ```
 
 ## Author

@@ -1,7 +1,7 @@
 //@format
 /*globals QUnit firestoreQueryParser*/
 const parser = firestoreQueryParser,
-  astToPlan = firestoreQueryParser.astToPlan;
+  {astToSExpr, astToPlan, applyToQuery} = parser;
 
 function mkComp(op) {
   return function (left, right) {
@@ -69,6 +69,15 @@ function boolExpr(left, op, right) {
   return {type: 'boolExpr', left, op, right};
 }
 
+class MockQuery {
+  constructor() {
+    this.ops = [];
+  }
+  where(left, op, right) {
+    this.ops.push(['where', [left, op, right]]);
+  }
+}
+
 QUnit.module('add', () => {
   QUnit.test('parse compExpr', (assert) => {
     assert.deepEqual(eq(id('a'), bool(false)), parser.parse('a == false'));
@@ -125,9 +134,55 @@ QUnit.module('add', () => {
     );
   });
 
-  QUnit.test('astToPlan boolExpr', (assert) => {
+  QUnit.test('astToSExpr', (assert) => {
     assert.deepEqual(
       ['where', ['a', '==', false]],
+      astToSExpr(parser.parse('a == false'))
+    );
+
+    assert.deepEqual(
+      [
+        'and',
+        [
+          ['where', ['a', '==', false]],
+          ['where', ['b', '!=', true]],
+        ],
+      ],
+      astToSExpr(parser.parse('a == false and b != true'))
+    );
+
+    assert.deepEqual(
+      [
+        'and',
+        [
+          ['where', ['a', '==', false]],
+          ['where', ['b', '!=', true]],
+          ['where', ['c', '<', 42]],
+        ],
+      ],
+      astToSExpr(parser.parse('a == false and b != true and c < 42'))
+    );
+    assert.deepEqual(
+      [
+        'and',
+        [
+          ['where', ['a', '==', false]],
+          ['where', ['b', '!=', true]],
+          ['where', ['c', '<', 42]],
+          ['where', ['d', 'not-in', [42, true, 'hi']]],
+        ],
+      ],
+      astToSExpr(
+        parser.parse(
+          'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
+        )
+      )
+    );
+  });
+
+  QUnit.test('astToPlan', (assert) => {
+    assert.deepEqual(
+      [['where', ['a', '==', false]]],
       astToPlan(parser.parse('a == false'))
     );
 
@@ -159,6 +214,50 @@ QUnit.module('add', () => {
           'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
         )
       )
+    );
+  });
+
+  QUnit.test('applyToQuery', (assert) => {
+    const q1 = new MockQuery();
+    applyToQuery(q1, parser.parse('a == false'));
+    assert.deepEqual([['where', ['a', '==', false]]], q1.ops);
+
+    const q2 = new MockQuery();
+    applyToQuery(q2, parser.parse('a == false and b != true'));
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '!=', true]],
+      ],
+      q2.ops
+    );
+
+    const q3 = new MockQuery();
+    applyToQuery(q3, parser.parse('a == false and b != true and c < 42'));
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '!=', true]],
+        ['where', ['c', '<', 42]],
+      ],
+      q3.ops
+    );
+
+    const q4 = new MockQuery();
+    applyToQuery(
+      q4,
+      parser.parse(
+        'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
+      )
+    );
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '!=', true]],
+        ['where', ['c', '<', 42]],
+        ['where', ['d', 'not-in', [42, true, 'hi']]],
+      ],
+      q4.ops
     );
   });
 });
