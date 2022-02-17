@@ -111,7 +111,7 @@ arrayItems
 literal
     : FLOAT                 {$$ = {type: 'float', v: parseFloat(yytext)};}
     | INT                   {$$ = {type: 'int', v: parseInt(yytext, 10)};}
-    | STRING                {$$ = {type: 'str', v: yytext.slice(1, -1)};}
+    | STRING                {$$ = {type: 'str', v: JSON.parse(yytext)};}
     | BOOL                  {$$ = {type: 'bool', v: yytext === 'true'};}
     ;
 

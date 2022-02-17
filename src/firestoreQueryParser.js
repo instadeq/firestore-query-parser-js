@@ -141,7 +141,7 @@ case 32:
 this.$ = {type: 'int', v: parseInt(yytext, 10)};
 break;
 case 33:
-this.$ = {type: 'str', v: yytext.slice(1, -1)};
+this.$ = {type: 'str', v: JSON.parse(yytext)};
 break;
 case 34:
 this.$ = {type: 'bool', v: yytext === 'true'};
