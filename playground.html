@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>🔥 Firestore Query Parser Playground</title>
+<style>*,*::before,*::after{box-sizing: border-box}.out{width:100%;padding:0.5em;margin:0.5em 0;min-height:10em;font-family:monospace}body{background-color:#f5f5ff}textarea{border:1px solid rebeccapurple}</style>
+</head>
+<body style="padding:2em 5em">
+  <h1 style="text-align:center">Firestore Query Parser Playground</h1>
+  <h2>Query</h2>
+  <textarea id=query style="font-size:2em;min-height:3em;width:100%;padding:1em;margin:1em 0;font-family:monospace}" placeholder="a == 4 and b == \"hello\" and c < 4.5 ORDER BY a, b DESC LIMIT 5">a == 4 and b != "hello" and c &lt; 4.5 ORDER BY a, b DESC, c ASC LIMIT 5</textarea>
+  <div style="text-align:center">
+    <select value="" id=examples style="padding:.75em 1em;color:rebeccapurple;font-weight:bold;border:1px solid rebeccapurple;border-radius:5px;">
+      <option value="">📑 Select an Example</option>
+      <option value=simple>Simple</option>
+      <option value=and>Boolean Logic</option>
+      <option value=limit>Limit</option>
+      <option value=orderBy>Order By</option>
+      <option value=orderByMany>Order By Many</option>
+      <option value=orderByAndLimit>Order By &amp; Limit</option>
+    </select>
+    <button id="parse" style="padding:.75em 1em;background-color:rebeccapurple;color:white;border:0;border-radius:5px;font-weight:bold;cursor:pointer;margin-left:1em">🤖 Parse (Ctrl+Enter)</button>
+  </div>
+
+  <div id=error style="display:none;padding:1em;margin:1em 0;color:red;border:1px solid red;font-family:monospace;width:100%"></div>
+
+  <h2>Code</h2>
+  <textarea class=out id=code readonly></textarea>
+  <h2>Plan</h2>
+  <textarea class=out id=plan readonly></textarea>
+  <h2>Expression</h2>
+  <textarea class=out id=sexpr readonly></textarea>
+  <h2>AST</h2>
+  <textarea class=out id=ast readonly></textarea>
+
+  <script src="./src/firestoreQueryParser.js"></script>
+  <script src="./src/firestoreQueryUtil.js"></script>
+  <script src="./playground.js"></script>
+</body>
+</html>
