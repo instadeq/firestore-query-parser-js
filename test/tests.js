@@ -24,6 +24,26 @@ const eq = mkComp('=='),
 
 const and = mkBool('and');
 
+function q(where) {
+  return qol(where, [], null);
+}
+
+function qol(where, order, limit) {
+  return {where, order, limit};
+}
+
+function sortAsc(v) {
+  return sort(v, 'ASC');
+}
+
+function sortDesc(v) {
+  return sort(v, 'DESC');
+}
+
+function sort(v, type) {
+  return {v, type};
+}
+
 const arrContains = mkComp('array-contains'),
   arrContainsAny = mkComp('array-contains-any'),
   arrIn = mkComp('in'),
@@ -33,8 +53,12 @@ function id(v) {
   return t('name', v);
 }
 
-function num(v) {
-  return t('num', v);
+function float(v) {
+  return t('float', v);
+}
+
+function int(v) {
+  return t('int', v);
 }
 
 function array(...v) {
@@ -74,78 +98,209 @@ class MockQuery {
     this.ops = [];
   }
   where(left, op, right) {
-    this.ops.push(['where', [left, op, right]]);
+    this._pushOp('where', [left, op, right]);
+  }
+  limit(num) {
+    this._pushOp('limit', [num]);
+  }
+  sortBy(name, type) {
+    this._pushOp('sortBy', [name, type]);
+  }
+  _pushOp(name, args) {
+    this.ops.push([name, args]);
   }
 }
 
-QUnit.module('add', () => {
+QUnit.module('firebaseQueryParser', () => {
   QUnit.test('parse compExpr', (assert) => {
-    assert.deepEqual(eq(id('a'), bool(false)), parser.parse('a == false'));
-    assert.deepEqual(ne(id('asd'), bool(true)), parser.parse('asd != true'));
-    assert.deepEqual(lt(id('a1'), num(1.5)), parser.parse('a1 < 1.5'));
-    assert.deepEqual(le(id('a_A_1'), num(100)), parser.parse('a_A_1 <= 100'));
-    assert.deepEqual(gt(id('ab12'), num(10.55)), parser.parse('ab12 > 10.55'));
+    assert.deepEqual(q(eq(id('a'), bool(false))), parser.parse('a == false'));
+    assert.deepEqual(q(ne(id('asd'), bool(true))), parser.parse('asd != true'));
+    assert.deepEqual(q(lt(id('a1'), float(1.5))), parser.parse('a1 < 1.5'));
     assert.deepEqual(
-      ge(id('ab_AB_12'), str('asd')),
+      q(le(id('a_A_1'), int(100))),
+      parser.parse('a_A_1 <= 100')
+    );
+    assert.deepEqual(
+      q(gt(id('ab12'), float(10.55))),
+      parser.parse('ab12 > 10.55')
+    );
+    assert.deepEqual(
+      q(ge(id('ab_AB_12'), str('asd'))),
       parser.parse('ab_AB_12 >= "asd"')
     );
   });
 
   QUnit.test('parse array compExpr', (assert) => {
     assert.deepEqual(
-      arrContains(id('a'), array()),
+      q(arrContains(id('a'), array())),
       parser.parse('a array-contains []')
     );
     assert.deepEqual(
-      arrContainsAny(id('a'), array()),
+      q(arrContainsAny(id('a'), array())),
       parser.parse('a array-contains-any []')
     );
-    assert.deepEqual(arrIn(id('a'), array()), parser.parse('a in []'));
-    assert.deepEqual(arrNotIn(id('a'), array()), parser.parse('a not-in []'));
+    assert.deepEqual(q(arrIn(id('a'), array())), parser.parse('a in []'));
+    assert.deepEqual(
+      q(arrNotIn(id('a'), array())),
+      parser.parse('a not-in []')
+    );
 
     assert.deepEqual(
-      arrContains(id('a'), array(num(1))),
+      q(arrContains(id('a'), array(int(1)))),
       parser.parse('a array-contains [1]')
     );
 
     assert.deepEqual(
-      arrContains(id('a'), array(num(1), bool(true))),
+      q(arrContains(id('a'), array(int(1), bool(true)))),
       parser.parse('a array-contains [1, true]')
     );
 
     assert.deepEqual(
-      arrContains(id('a'), array(num(1), bool(true), str('hi'))),
+      q(arrContains(id('a'), array(int(1), bool(true), str('hi')))),
       parser.parse('a array-contains [1, true, "hi"]')
     );
   });
 
   QUnit.test('parse boolExpr', (assert) => {
     assert.deepEqual(
-      and(eq(id('a'), bool(false)), ne(id('b'), bool(true))),
+      q(and(eq(id('a'), bool(false)), ne(id('b'), bool(true)))),
       parser.parse('a == false and b != true')
     );
 
     assert.deepEqual(
-      and(
-        eq(id('a'), bool(false)),
-        and(ne(id('b'), bool(true)), lt(id('c'), num(42)))
+      q(
+        and(
+          eq(id('a'), bool(false)),
+          and(ne(id('b'), bool(true)), lt(id('c'), int(42)))
+        )
       ),
       parser.parse('a == false and b != true and c < 42')
     );
   });
 
+  QUnit.test('parse limit', (assert) => {
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [], 10),
+      parser.parse('a == false LIMIT 10')
+    );
+  });
+
+  QUnit.test('parse order by', (assert) => {
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortAsc('a')], null),
+      parser.parse('a == false ORDER BY a')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortAsc('a')], null),
+      parser.parse('a == false ORDER BY a ASC')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortDesc('a')], null),
+      parser.parse('a == false ORDER BY a DESC')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortDesc('a'), sortAsc('b')], null),
+      parser.parse('a == false ORDER BY a DESC, b')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortDesc('a'), sortAsc('b')], null),
+      parser.parse('a == false ORDER BY a DESC, b ASC')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortAsc('a'), sortAsc('b')], null),
+      parser.parse('a == false ORDER BY a, b ASC')
+    );
+    assert.deepEqual(
+      qol(
+        eq(id('a'), bool(false)),
+        [sortAsc('a'), sortAsc('b'), sortDesc('c')],
+        null
+      ),
+      parser.parse('a == false ORDER BY a, b ASC, c DESC')
+    );
+    assert.deepEqual(
+      qol(
+        eq(id('a'), bool(false)),
+        [sortAsc('a'), sortAsc('b'), sortDesc('c')],
+        null
+      ),
+      parser.parse('a == false ORDER BY a, b, c DESC')
+    );
+    assert.deepEqual(
+      qol(
+        eq(id('a'), bool(false)),
+        [sortAsc('a'), sortAsc('b'), sortAsc('c')],
+        null
+      ),
+      parser.parse('a == false ORDER BY a, b, c')
+    );
+  });
+
+  QUnit.test('parse order by limit', (assert) => {
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortAsc('a')], 10),
+      parser.parse('a == false ORDER BY a LIMIT 10')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortAsc('a')], 11),
+      parser.parse('a == false ORDER BY a ASC LIMIT 11')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortDesc('a')], 1),
+      parser.parse('a == false ORDER BY a DESC LIMIT 1')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortDesc('a'), sortAsc('b')], 100),
+      parser.parse('a == false ORDER BY a DESC, b LIMIT 100')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortDesc('a'), sortAsc('b')], 13),
+      parser.parse('a == false ORDER BY a DESC, b ASC LIMIT 13')
+    );
+    assert.deepEqual(
+      qol(eq(id('a'), bool(false)), [sortAsc('a'), sortAsc('b')], 410),
+      parser.parse('a == false ORDER BY a, b ASC LIMIT 410')
+    );
+    assert.deepEqual(
+      qol(
+        eq(id('a'), bool(false)),
+        [sortAsc('a'), sortAsc('b'), sortDesc('c')],
+        1000
+      ),
+      parser.parse('a == false ORDER BY a, b ASC, c DESC LIMIT 1000')
+    );
+    assert.deepEqual(
+      qol(
+        eq(id('a'), bool(false)),
+        [sortAsc('a'), sortAsc('b'), sortDesc('c')],
+        120
+      ),
+      parser.parse('a == false ORDER BY a, b, c DESC LIMIT 120')
+    );
+    assert.deepEqual(
+      qol(
+        eq(id('a'), bool(false)),
+        [sortAsc('a'), sortAsc('b'), sortAsc('c')],
+        10
+      ),
+      parser.parse('a == false ORDER BY a, b, c LIMIT 10')
+    );
+  });
+
   QUnit.test('astToSExpr', (assert) => {
     assert.deepEqual(
-      ['where', ['a', '==', false]],
+      [['where', ['a', '==', false]]],
       astToSExpr(parser.parse('a == false'))
     );
 
     assert.deepEqual(
       [
-        'and',
         [
-          ['where', ['a', '==', false]],
-          ['where', ['b', '!=', true]],
+          'and',
+          [
+            ['where', ['a', '==', false]],
+            ['where', ['b', '!=', true]],
+          ],
         ],
       ],
       astToSExpr(parser.parse('a == false and b != true'))
@@ -153,23 +308,27 @@ QUnit.module('add', () => {
 
     assert.deepEqual(
       [
-        'and',
         [
-          ['where', ['a', '==', false]],
-          ['where', ['b', '!=', true]],
-          ['where', ['c', '<', 42]],
+          'and',
+          [
+            ['where', ['a', '==', false]],
+            ['where', ['b', '!=', true]],
+            ['where', ['c', '<', 42]],
+          ],
         ],
       ],
       astToSExpr(parser.parse('a == false and b != true and c < 42'))
     );
     assert.deepEqual(
       [
-        'and',
         [
-          ['where', ['a', '==', false]],
-          ['where', ['b', '!=', true]],
-          ['where', ['c', '<', 42]],
-          ['where', ['d', 'not-in', [42, true, 'hi']]],
+          'and',
+          [
+            ['where', ['a', '==', false]],
+            ['where', ['b', '!=', true]],
+            ['where', ['c', '<', 42]],
+            ['where', ['d', 'not-in', [42, true, 'hi']]],
+          ],
         ],
       ],
       astToSExpr(
@@ -177,6 +336,60 @@ QUnit.module('add', () => {
           'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
         )
       )
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['limit', 5],
+      ],
+      astToSExpr(parser.parse('a == false LIMIT 5'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['orderBy', [['a', 'asc']]],
+      ],
+      astToSExpr(parser.parse('a == false ORDER BY a ASC'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        [
+          'orderBy',
+          [
+            ['a', 'asc'],
+            ['b', 'desc'],
+          ],
+        ],
+      ],
+      astToSExpr(parser.parse('a == false ORDER BY a, b DESC'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['orderBy', [['a', 'asc']]],
+        ['limit', 5],
+      ],
+      astToSExpr(parser.parse('a == false ORDER BY a ASC LIMIT 5'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        [
+          'orderBy',
+          [
+            ['a', 'asc'],
+            ['b', 'desc'],
+          ],
+        ],
+        ['limit', 5],
+      ],
+      astToSExpr(parser.parse('a == false ORDER BY a, b DESC LIMIT 5'))
     );
   });
 
@@ -213,6 +426,55 @@ QUnit.module('add', () => {
         parser.parse(
           'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
         )
+      )
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['limit', [6]],
+      ],
+      astToPlan(parser.parse('a == false LIMIT 6'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['sortBy', ['a', 'asc']],
+        ['limit', [6]],
+      ],
+      astToPlan(parser.parse('a == false ORDER BY a LIMIT 6'))
+    );
+
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['sortBy', ['a', 'asc']],
+        ['sortBy', ['b', 'desc']],
+        ['limit', [6]],
+      ],
+      astToPlan(parser.parse('a == false ORDER BY a, b DESC LIMIT 6'))
+    );
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['sortBy', ['a', 'asc']],
+        ['sortBy', ['b', 'desc']],
+        ['sortBy', ['c', 'asc']],
+      ],
+      astToPlan(parser.parse('a == false ORDER BY a, b DESC, c ASC'))
+    );
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '==', 5]],
+        ['sortBy', ['a', 'asc']],
+        ['sortBy', ['b', 'desc']],
+        ['sortBy', ['c', 'asc']],
+        ['limit', [6]],
+      ],
+      astToPlan(
+        parser.parse('a == false and b == 5 ORDER BY a, b DESC, c ASC LIMIT 6')
       )
     );
   });
@@ -258,6 +520,23 @@ QUnit.module('add', () => {
         ['where', ['d', 'not-in', [42, true, 'hi']]],
       ],
       q4.ops
+    );
+
+    const q5 = new MockQuery();
+    applyToQuery(
+      q5,
+      parser.parse('a == false and b == 5 ORDER BY a, b DESC, c ASC LIMIT 6')
+    );
+    assert.deepEqual(
+      [
+        ['where', ['a', '==', false]],
+        ['where', ['b', '==', 5]],
+        ['sortBy', ['a', 'asc']],
+        ['sortBy', ['b', 'desc']],
+        ['sortBy', ['c', 'asc']],
+        ['limit', [6]],
+      ],
+      q5.ops
     );
   });
 });

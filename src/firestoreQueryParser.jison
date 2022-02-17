@@ -5,11 +5,17 @@
 %%
 
 \s+                   /* skip whitespace */
-[0-9]+("."[0-9]+)?\b  return 'NUMBER';
+[0-9]+"."[0-9]+\b     return 'FLOAT';
+[0-9]+\b              return 'INT';
 (true|false)          return 'BOOL';
 and                   return 'and';
 '"'("\\"["]|[^"])*'"' return 'STRING';
 
+"ORDER"               return 'ORDER';
+"BY"                  return 'BY';
+"LIMIT"               return 'LIMIT';
+"ASC"                 return 'ASC';
+"DESC"                return 'DESC';
 "["                   return '[';
 "]"                   return ']';
 ","                   return ',';
@@ -36,11 +42,35 @@ and                   return 'and';
 
 %% /* language grammar */
 
-expressions : boolExpr EOF { return $1; };
+expressions 
+    : boolExpr orderLimit EOF {return {where: $1, order: $2.order, limit: $2.limit};}
+    | boolExpr EOF {return {where: $1, order: [], limit: null};}
+    ;
 
 boolExpr
     : compExpr boolOp boolExpr {$$ = {type: 'boolExpr', left: $1, op: $2, right: $3};}
     | compExpr { $$ = $1; }
+    ;
+
+orderLimit
+    : 'ORDER' 'BY' orderExpr 'LIMIT' INT {$$ = {type: 'orderLimit', order: $3, limit: parseInt($5, 10)};}
+    | 'ORDER' 'BY' orderExpr {$$ = {type: 'orderLimit', order: $3, limit: null};}
+    | 'LIMIT' INT {$$ = {type: 'orderLimit', order: [], limit: parseInt($2, 10)};}
+    ;
+
+orderExpr
+    : orderItem ',' orderExpr {$$ = [$1].concat($3);}
+    | orderItem {$$ = [$1];}
+    ;
+
+orderItem
+    : IDENTIFIER orderType {$$ = {type: 'orderItem', v: $1, type: $2};}
+    | IDENTIFIER {$$ = {type: 'orderItem', v: $1, type: 'ASC'};}
+    ;
+
+orderType
+    : 'ASC'                {$$ = yytext;}
+    | 'DESC'               {$$ = yytext;}
     ;
 
 compExpr
@@ -79,7 +109,8 @@ arrayItems
     ;
 
 literal
-    : NUMBER                {$$ = {type: 'num', v: parseFloat(yytext)};}
+    : FLOAT                 {$$ = {type: 'float', v: parseFloat(yytext)};}
+    | INT                   {$$ = {type: 'int', v: parseInt(yytext, 10)};}
     | STRING                {$$ = {type: 'str', v: yytext.slice(1, -1)};}
     | BOOL                  {$$ = {type: 'bool', v: yytext === 'true'};}
     ;
