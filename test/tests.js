@@ -29,7 +29,7 @@ function q(where) {
 }
 
 function qol(where, order, limit) {
-  return fq([{type: 'COL', v: 'a'}], where, order, limit);
+  return fq([{type: 'COLLECTION', v: 'a'}], where, order, limit);
 }
 
 function fq(from, where, order, limit) {
@@ -37,7 +37,7 @@ function fq(from, where, order, limit) {
 }
 
 function col(v) {
-  return {type: 'COL', v};
+  return {type: 'COLLECTION', v};
 }
 
 function colg(v) {
@@ -137,7 +137,7 @@ class MockQuery {
 }
 
 function parseExpr(expr) {
-  return parser.parse('FROM COL "a" WHERE ' + expr);
+  return parser.parse('FROM "a" WHERE ' + expr);
 }
 
 function parse(expr) {
@@ -540,7 +540,7 @@ QUnit.module('firebaseQueryParser', () => {
       ],
       astToPlan(
         parse(
-          'FROM COL "a", COLGROUP "b", DOC "c" WHERE a == false and b == 5 ORDER BY a, b DESC, c ASC LIMIT 6'
+          'FROM COLLECTION "a", COLGROUP "b", DOC "c" WHERE a == false and b == 5 ORDER BY a, b DESC, c ASC LIMIT 6'
         )
       )
     );
@@ -620,7 +620,7 @@ QUnit.module('firebaseQueryParser', () => {
     const q6 = applyToQuery(
       new MockQuery(),
       parse(
-        'FROM COL "a", COLGROUP "b", DOC "c" WHERE a == false and b == 5 ORDER BY a, b DESC, c ASC LIMIT 6'
+        'FROM "a", COLGROUP "b", DOC "c" WHERE a == false and b == 5 ORDER BY a, b DESC, c ASC LIMIT 6'
       )
     );
     assert.deepEqual(
@@ -642,7 +642,7 @@ QUnit.module('firebaseQueryParser', () => {
   QUnit.test('parse from', (assert) => {
     assert.deepEqual(
       fq([col('c1')], eq(id('a'), int(1))),
-      parse('FROM COL "c1" WHERE a == 1')
+      parse('FROM "c1" WHERE a == 1')
     );
     assert.deepEqual(
       fq([colg('cg')], eq(id('a'), int(1))),
@@ -654,7 +654,7 @@ QUnit.module('firebaseQueryParser', () => {
     );
     assert.deepEqual(
       fq([col('c1'), colg('cg'), doc('d1')], eq(id('a'), int(1))),
-      parse('FROM COL "c1", COLGROUP "cg", DOC "d1" WHERE a == 1')
+      parse('FROM COLLECTION "c1", COLGROUP "cg", DOC "d1" WHERE a == 1')
     );
     assert.deepEqual(
       fq(
@@ -662,7 +662,7 @@ QUnit.module('firebaseQueryParser', () => {
         eq(id('a'), int(1))
       ),
       parse(
-        'FROM COL "c1", COLGROUP "cg", DOC "d1", COL "c2", COLGROUP "cg2", DOC "d2" WHERE a == 1'
+        'FROM "c1", COLGROUP "cg", DOC "d1", COLLECTION "c2", COLGROUP "cg2", DOC "d2" WHERE a == 1'
       )
     );
   });

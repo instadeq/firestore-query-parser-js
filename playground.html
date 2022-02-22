@@ -8,7 +8,7 @@
 <body style="padding:2em 5em">
   <h1 style="text-align:center">Firestore Query Parser Playground</h1>
   <h2>Query</h2>
-  <textarea id=query style="font-size:2em;min-height:3em;width:100%;padding:1em;margin:1em 0;font-family:monospace}" placeholder="FROM COL \"col1\" WHERE a == 4 and b == \"hello\" and c < 4.5 ORDER BY a, b DESC LIMIT 5">FROM COL "col1" WHERE a == 4 and b != "hello" and c &lt; 4.5 ORDER BY a, b DESC, c ASC LIMIT 5</textarea>
+  <textarea id=query style="font-size:2em;min-height:3em;width:100%;padding:1em;margin:1em 0;font-family:monospace}" placeholder="FROM \"col1\" WHERE a == 4 and b == \"hello\" and c < 4.5 ORDER BY a, b DESC LIMIT 5">FROM "col1" WHERE a == 4 and b != "hello" and c &lt; 4.5 ORDER BY a, b DESC, c ASC LIMIT 5</textarea>
   <div style="text-align:center">
     <select value="" id=examples style="padding:.75em 1em;color:rebeccapurple;font-weight:bold;border:1px solid rebeccapurple;border-radius:5px;">
       <option value="">📑 Select an Example</option>

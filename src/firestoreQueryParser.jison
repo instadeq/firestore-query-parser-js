@@ -14,7 +14,7 @@ and                   return 'and';
 "FROM"                return 'FROM';
 "WHERE"               return 'WHERE';
 "DOC"                 return 'DOC';
-"COL"                 return 'COL';
+"COLLECTION"          return 'COLLECTION';
 "COLGROUP"            return 'COLGROUP';
 "ORDER"               return 'ORDER';
 "BY"                  return 'BY';
@@ -47,7 +47,7 @@ and                   return 'and';
 
 %% /* language grammar */
 
-expressions 
+expressions
     : fromExpr 'WHERE' boolExpr orderLimit EOF {return {from: $1, where: $3, order: $4.order, limit: $4.limit};}
     | fromExpr 'WHERE' boolExpr EOF {return {from: $1, where: $3, order: [], limit: null};}
     ;
@@ -57,13 +57,15 @@ fromExpr
     ;
 
 fromVals
-    : fromType STRING ',' fromVals {$$ = [{type: $1, v: JSON.parse($2)}].concat($4);}
-    | fromType STRING {$$ = [{type: $1, v: JSON.parse($2)}];}
+    : STRING ',' fromVals           {$$ = [{type: "COLLECTION", v: JSON.parse($1)}].concat($3);}
+    | fromType STRING ',' fromVals  {$$ = [{type: $1, v: JSON.parse($2)}].concat($4);}
+    | STRING                        {$$ = [{type: "COLLECTION", v: JSON.parse($1)}];}
+    | fromType STRING               {$$ = [{type: $1, v: JSON.parse($2)}];}
     ;
 
 fromType
     : 'DOC'             {$$ = yytext;}
-    | 'COL'             {$$ = yytext;}
+    | 'COLLECTION'      {$$ = yytext;}
     | 'COLGROUP'        {$$ = yytext;}
     ;
 

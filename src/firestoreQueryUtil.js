@@ -20,7 +20,7 @@
   }
 
   const FROM_TYPE_TO_NAME = {
-    COL: 'collection',
+    COLLECTION: 'collection',
     COLGROUP: 'collectionGroup',
     DOC: 'doc',
   };

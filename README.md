@@ -24,26 +24,29 @@ Check `test/tests.js` for usage examples, but basically:
 ```js
 // return the query's AST
 const ast = firestoreQueryParser.parse(
-    'a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
+    'FROM "coll" WHERE a == false and b != true and c < 42 and d not-in [42, true, "hi"]'
 )
 
 // this
 firestoreQueryParser.astToSExpr(ast);
 // will return something like this, useful for debugging:
 [
-  'and',
-  [
-    ['where', ['a', '==', false]],
-    ['where', ['b', '!=', true]],
-    ['where', ['c', '<', 42]],
-    ['where', ['d', 'not-in', [42, true, 'hi']]],
-  ],
+  ['collection', 'coll'],
+  ['and',
+    [
+      ['where', ['a', '==', false]],
+      ['where', ['b', '!=', true]],
+      ['where', ['c', '<', 42]],
+      ['where', ['d', 'not-in', [42, true, 'hi']]],
+    ]
+  ]
 ]
 
 // this
 firestoreQueryParser.astToPlan(ast);
 // will return something like this, useful to apply it to the firestore query:
 [
+  ['collection', 'coll'],
   ['where', ['a', '==', false]],
   ['where', ['b', '!=', true]],
   ['where', ['c', '<', 42]],
@@ -51,7 +54,7 @@ firestoreQueryParser.astToPlan(ast);
 ]
 
 // or you can just apply it to your query object:
-firestoreQueryParser.applyToQuery(query, ast);
+firestoreQueryParser.applyToQuery(firestore, ast);
 ```
 
 ## Author
