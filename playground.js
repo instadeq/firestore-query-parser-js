@@ -3,12 +3,15 @@
 
 const byId = (id) => document.getElementById(id),
   EXAMPLES = {
-    simple: 'a == 5',
-    and: 'a <= 5 and b > 1.5 and c != "hello" and d array-contains [1, true, "hi"]',
-    limit: 'a < 5 LIMIT 10',
-    orderBy: 'a > 10 ORDER BY a',
-    orderByMany: 'a > 10 ORDER BY a, b ASC, d DESC',
-    orderByAndLimit: 'a > 10 ORDER BY a, b ASC, d DESC LIMIT 20',
+    simple: 'FROM COL "c1" WHERE a == 5',
+    colGroup: 'FROM COL "c1", COLGROUP "cg" WHERE a == 5',
+    colGroupDoc: 'FROM COL "c1", COLGROUP "cg", DOC "CA" WHERE a == 5',
+    and: 'FROM COL "c1" WHERE a <= 5 and b > 1.5 and c != "hello" and d array-contains [1, true, "hi"]',
+    limit: 'FROM COL "c1" WHERE a < 5 LIMIT 10',
+    orderBy: 'FROM COL "c1" WHERE a > 10 ORDER BY a',
+    orderByMany: 'FROM COL "c1" WHERE a > 10 ORDER BY a, b ASC, d DESC',
+    orderByAndLimit:
+      'FROM COL "c1" WHERE a > 10 ORDER BY a, b ASC, d DESC LIMIT 20',
   };
 function main() {
   const parser = firestoreQueryParser,

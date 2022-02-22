@@ -11,6 +11,11 @@
 and                   return 'and';
 '"'("\\"["]|[^"])*'"' return 'STRING';
 
+"FROM"                return 'FROM';
+"WHERE"               return 'WHERE';
+"DOC"                 return 'DOC';
+"COL"                 return 'COL';
+"COLGROUP"            return 'COLGROUP';
 "ORDER"               return 'ORDER';
 "BY"                  return 'BY';
 "LIMIT"               return 'LIMIT';
@@ -43,8 +48,23 @@ and                   return 'and';
 %% /* language grammar */
 
 expressions 
-    : boolExpr orderLimit EOF {return {where: $1, order: $2.order, limit: $2.limit};}
-    | boolExpr EOF {return {where: $1, order: [], limit: null};}
+    : fromExpr 'WHERE' boolExpr orderLimit EOF {return {from: $1, where: $3, order: $4.order, limit: $4.limit};}
+    | fromExpr 'WHERE' boolExpr EOF {return {from: $1, where: $3, order: [], limit: null};}
+    ;
+
+fromExpr
+    : 'FROM' fromVals {$$ = $2}
+    ;
+
+fromVals
+    : fromType STRING ',' fromVals {$$ = [{type: $1, v: JSON.parse($2)}].concat($4);}
+    | fromType STRING {$$ = [{type: $1, v: JSON.parse($2)}];}
+    ;
+
+fromType
+    : 'DOC'             {$$ = yytext;}
+    | 'COL'             {$$ = yytext;}
+    | 'COLGROUP'        {$$ = yytext;}
     ;
 
 boolExpr

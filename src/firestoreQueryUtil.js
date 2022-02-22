@@ -3,7 +3,10 @@
 
 (function () {
   function astToSExpr(ast) {
-    const root = [whereToSExpr(ast.where)];
+    const root = fromToSExpr(ast.from);
+
+    root.push(whereToSExpr(ast.where));
+
     if (ast.order.length > 0) {
       root.push([
         'orderBy',
@@ -14,6 +17,15 @@
       root.push(['limit', ast.limit]);
     }
     return root;
+  }
+
+  const FROM_TYPE_TO_NAME = {
+    COL: 'collection',
+    COLGROUP: 'collectionGroup',
+    DOC: 'doc',
+  };
+  function fromToSExpr(items) {
+    return items.map(({type, v}) => [FROM_TYPE_TO_NAME[type], v]);
   }
 
   function whereToSExpr(ast) {
@@ -51,16 +63,23 @@
   }
 
   function astToPlan(ast) {
-    const [where, ...rest] = astToSExpr(ast),
-      plan = where[0] === 'and' ? where[1] : [where];
+    const items = astToSExpr(ast),
+      plan = [];
 
-    for (let expr of rest) {
-      if (expr[0] === 'orderBy') {
-        for (let order of expr[1]) {
+    for (let expr of items) {
+      const [head, second] = expr;
+      if (head === 'and') {
+        for (let where of second) {
+          plan.push(where);
+        }
+      } else if (head === 'where') {
+        plan.push(expr);
+      } else if (head === 'orderBy') {
+        for (let order of second) {
           plan.push(['orderBy', order]);
         }
-      } else if (expr[0] === 'limit') {
-        plan.push(['limit', [expr[1]]]);
+      } else if (!Array.isArray(second)) {
+        plan.push([head, [second]]);
       } else {
         plan.push(expr);
       }
