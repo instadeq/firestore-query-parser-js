@@ -2,6 +2,12 @@
 /*globals firestoreQueryParser*/
 
 (function () {
+  class Var {
+    constructor(name) {
+      this.name = name;
+    }
+  }
+
   function astToSExpr(ast) {
     const root = fromToSExpr(ast.from);
 
@@ -44,6 +50,8 @@
       case 'bool':
       case 'str':
         return v;
+      case 'var':
+        return new Var(v);
       case 'array':
         return v.map((item) => whereToSExpr(item));
       default:
@@ -88,14 +96,38 @@
     return plan;
   }
 
-  function applyToQuery(query, ast) {
+  function applyToQuery(query, ast, vars, onVarNotFound) {
     for (let [method, params] of astToPlan(ast)) {
-      query = query[method].apply(query, params);
+      query = query[method].apply(
+        query,
+        replaceParamVars(params, vars, onVarNotFound)
+      );
     }
     return query;
   }
 
-  firestoreQueryParser.astToSExpr = astToSExpr;
-  firestoreQueryParser.astToPlan = astToPlan;
-  firestoreQueryParser.applyToQuery = applyToQuery;
+  function replaceParamVars(params, vars, onVarNotFound) {
+    return params.map((v) => {
+      if (Array.isArray(v)) {
+        return replaceParamVars(v, vars, onVarNotFound);
+      } else if (v instanceof Var) {
+        const value = vars[v.name];
+        if (value === undefined) {
+          onVarNotFound(v, params);
+          return null;
+        } else {
+          return value;
+        }
+      } else {
+        return v;
+      }
+    });
+  }
+
+  Object.assign(firestoreQueryParser, {
+    astToSExpr,
+    astToPlan,
+    applyToQuery,
+    Var,
+  });
 })();

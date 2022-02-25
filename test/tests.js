@@ -1,7 +1,7 @@
 //@format
 /*globals QUnit firestoreQueryParser*/
 const parser = firestoreQueryParser,
-  {astToSExpr, astToPlan, applyToQuery} = parser;
+  {astToSExpr, astToPlan, applyToQuery, Var} = parser;
 
 function mkComp(op) {
   return function (left, right) {
@@ -89,6 +89,10 @@ function bool(v) {
   return t('bool', v);
 }
 
+function vr(v) {
+  return t('var', v);
+}
+
 function compOp(v) {
   return t('compOp', v);
 }
@@ -151,6 +155,10 @@ QUnit.module('firebaseQueryParser', () => {
     assert.deepEqual(q(lt(id('a1'), float(1.5))), parseExpr('a1 < 1.5'));
     assert.deepEqual(q(le(id('a_A_1'), int(100))), parseExpr('a_A_1 <= 100'));
     assert.deepEqual(
+      q(le(id('a_A_1'), vr('myVar'))),
+      parseExpr('a_A_1 <= ${myVar}')
+    );
+    assert.deepEqual(
       q(gt(id('ab12'), float(10.55))),
       parseExpr('ab12 > 10.55')
     );
@@ -185,6 +193,16 @@ QUnit.module('firebaseQueryParser', () => {
     assert.deepEqual(
       q(arrContains(id('a'), array(int(1), bool(true), str('hi')))),
       parseExpr('a array-contains [1, true, "hi"]')
+    );
+
+    assert.deepEqual(
+      q(
+        arrContains(
+          id('a'),
+          array(int(1), bool(true), str('hi'), vr('my_var1'))
+        )
+      ),
+      parseExpr('a array-contains [1, true, "hi", ${my_var1}]')
     );
   });
 
@@ -321,6 +339,14 @@ QUnit.module('firebaseQueryParser', () => {
         ['where', ['a', '==', false]],
       ],
       astToSExpr(parseExpr('a == false'))
+    );
+
+    assert.deepEqual(
+      [
+        ['collection', 'a'],
+        ['where', ['a', '==', new Var('v1')]],
+      ],
+      astToSExpr(parseExpr('a == ${v1}'))
     );
 
     assert.deepEqual(
@@ -637,6 +663,24 @@ QUnit.module('firebaseQueryParser', () => {
       ],
       q6.ops
     );
+
+    const q7 = applyToQuery(
+      new MockQuery(),
+      parseExpr(
+        'a == ${v1} and b != ${v2} and c < 42 and d not-in [42, true, ${v3}]'
+      ),
+      {v1: 99, v2: 'asd', v3: false}
+    );
+    assert.deepEqual(
+      [
+        ['collection', ['a']],
+        ['where', ['a', '==', 99]],
+        ['where', ['b', '!=', 'asd']],
+        ['where', ['c', '<', 42]],
+        ['where', ['d', 'not-in', [42, true, false]]],
+      ],
+      q7.ops
+    );
   });
 
   QUnit.test('parse from', (assert) => {
@@ -665,5 +709,20 @@ QUnit.module('firebaseQueryParser', () => {
         'FROM "c1", COLGROUP "cg", DOC "d1", COLLECTION "c2", COLGROUP "cg2", DOC "d2" WHERE a == 1'
       )
     );
+  });
+
+  QUnit.test('applyToQuery calls onVarNotFound', (assert) => {
+    const names = [];
+    applyToQuery(
+      new MockQuery(),
+      parseExpr(
+        'a == ${v1} and b != ${v2} and c < 42 and d not-in [42, true, ${v3}]'
+      ),
+      {v1: 99},
+      (name) => {
+        names.push(name);
+      }
+    );
+    assert.deepEqual([new Var('v2'), new Var('v3')], names);
   });
 });

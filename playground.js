@@ -4,6 +4,7 @@
 const byId = (id) => document.getElementById(id),
   EXAMPLES = {
     simple: 'FROM "c1" WHERE a == 5',
+    vars: 'FROM "c1" WHERE a == ${myVar} and d array-contains [1, true, ${var_1}]',
     colGroup: 'FROM "c1", COLGROUP "cg" WHERE a == 5',
     colGroupDoc: 'FROM "c1", COLGROUP "cg", DOC "CA" WHERE a == 5',
     and: 'FROM "c1" WHERE a <= 5 and b > 1.5 and c != "hello" and d array-contains [1, true, "hi"]',
@@ -15,7 +16,7 @@ const byId = (id) => document.getElementById(id),
   };
 function main() {
   const parser = firestoreQueryParser,
-    {astToSExpr, astToPlan} = parser,
+    {astToSExpr, astToPlan, Var} = parser,
     queryIn = byId('query'),
     parseBtn = byId('parse'),
     examplesSel = byId('examples'),
@@ -41,6 +42,14 @@ function main() {
       errorOut.style.display = 'block';
     }
 
+    function replacer(_k, v) {
+      if (v instanceof Var) {
+        return `${v.name} value here`;
+      } else {
+        return v;
+      }
+    }
+
     const sexpr = astToSExpr(ast),
       plan = astToPlan(ast),
       code =
@@ -48,7 +57,9 @@ function main() {
         plan
           .map(
             ([method, args]) =>
-              `\n  .${method}(${args.map((v) => JSON.stringify(v)).join(', ')})`
+              `\n  .${method}(${args
+                .map((v) => JSON.stringify(v, replacer))
+                .join(', ')})`
           )
           .join('');
 

@@ -10,6 +10,7 @@
 (true|false)          return 'BOOL';
 and                   return 'and';
 '"'("\\"["]|[^"])*'"' return 'STRING';
+'${'[a-zA-Z][a-zA-Z0-9_]*'}'           return 'VAR';
 
 "FROM"                return 'FROM';
 "WHERE"               return 'WHERE';
@@ -135,6 +136,7 @@ literal
     | INT                   {$$ = {type: 'int', v: parseInt(yytext, 10)};}
     | STRING                {$$ = {type: 'str', v: JSON.parse(yytext)};}
     | BOOL                  {$$ = {type: 'bool', v: yytext === 'true'};}
+    | VAR                   {$$ = {type: 'var', v: yytext.slice(2, -1)};}
     ;
 
 name
