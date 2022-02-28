@@ -49,6 +49,7 @@
       case 'float':
       case 'bool':
       case 'str':
+      case 'name':
         return v;
       case 'var':
         return new Var(v);

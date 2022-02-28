@@ -1,6 +1,6 @@
 {
   "name": "firestore-query-parser",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Parser for firestore query language in text form",
   "main": "index.js",
   "scripts": {
