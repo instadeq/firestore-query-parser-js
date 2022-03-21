@@ -10,7 +10,7 @@
 (true|false)          return 'BOOL';
 and                   return 'and';
 '"'("\\"["]|[^"])*'"' return 'STRING';
-'${'[a-zA-Z][a-zA-Z0-9_]*'}'           return 'VAR';
+'${'[a-zA-Z0-9 ][a-zA-Z0-9_ ]*'}'           return 'VAR';
 
 "FROM"                return 'FROM';
 "WHERE"               return 'WHERE';

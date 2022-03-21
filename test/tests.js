@@ -352,6 +352,22 @@ QUnit.module('firebaseQueryParser', () => {
     assert.deepEqual(
       [
         ['collection', 'a'],
+        ['where', ['a', '==', new Var('1')]],
+      ],
+      astToSExpr(parseExpr('a == ${1}'))
+    );
+
+    assert.deepEqual(
+      [
+        ['collection', 'a'],
+        ['where', ['a', '==', new Var(' v 1 ')]],
+      ],
+      astToSExpr(parseExpr('a == ${ v 1 }'))
+    );
+
+    assert.deepEqual(
+      [
+        ['collection', 'a'],
         [
           'and',
           [
